@@ -3,24 +3,27 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<meta name="theme-color" content="#7a3fd1" />
+<meta name="theme-color" content="#ffffff" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<title>내 공구 알리미</title>
+<meta name="apple-mobile-web-app-title" content="또미제리 공구" />
+<title>또미제리 살림 공구 알리미</title>
 <style>
   :root {
-    --bg: #f7f4fb; --card: #ffffff; --text: #1f1a29; --sub: #6f6880; --line: #e7e1f0;
-    --brand: #7a3fd1; --brand-soft: #efe6fb;
-    --live: #e0452f; --live-soft: #fde9e5;
-    --soon: #1f8a5b; --soon-soft: #e3f5ec;
-    --guess: #a06a00; --guess-soft: #fbf1dc;
+    --bg: #ffffff; --card: #ffffff; --text: #191919; --sub: #8b8b8b; --line: #ececec; --chip: #f2f2f2;
+    --live: #e5484d;  --live-bg: #fff4f4;
+    --soon: #1f9d63;  --soon-bg: #effaf4;
+    --guess: #d08700; --guess-bg: #fff8e8;
+    --etc: #8b8b8b;   --etc-bg: #f6f6f6;
+    --manual: #4f6bed; --manual-bg: #f2f5ff;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #141119; --card: #1e1a26; --text: #f1edf7; --sub: #a49cb4; --line: #2e2838;
-      --brand: #b48cff; --brand-soft: #2c2142;
-      --live: #ff7a63; --live-soft: #3a1e1a;
-      --soon: #4cc98f; --soon-soft: #15301f;
-      --guess: #e6b450; --guess-soft: #352a12;
+      --bg: #121212; --card: #1d1d1d; --text: #f2f2f2; --sub: #9a9a9a; --line: #2c2c2c; --chip: #2a2a2a;
+      --live: #ff6b6f;  --live-bg: #2a1718;
+      --soon: #45c98a;  --soon-bg: #142a1f;
+      --guess: #f0b13e; --guess-bg: #2c2412;
+      --etc: #9a9a9a;   --etc-bg: #1a1a1a;
+      --manual: #8ea1ff; --manual-bg: #191d2e;
     }
   }
   * { box-sizing: border-box; }
@@ -32,52 +35,67 @@
   .wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 120px; }
   header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 14px; }
   h1 { font-size: 22px; margin: 0; letter-spacing: -0.5px; }
-  h1 small { display: block; font-size: 12px; color: var(--sub); font-weight: 500; margin-top: 2px; }
   .icon-btn {
-    border: 0; background: var(--brand-soft); color: var(--brand); width: 40px; height: 40px;
+    border: 0; background: var(--chip); color: var(--text); width: 40px; height: 40px;
     border-radius: 12px; font-size: 18px; cursor: pointer;
   }
   .icon-btn.spin { animation: spin 0.9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .search { position: relative; margin-bottom: 16px; }
+  .search { position: relative; margin-bottom: 12px; }
   .search input {
     width: 100%; font-size: 16px; padding: 14px 16px; border-radius: 14px;
-    border: 1.5px solid var(--line); background: var(--card); color: var(--text); outline: none;
+    border: 1.5px solid var(--line); background: var(--chip); color: var(--text); outline: none;
   }
-  .search input:focus { border-color: var(--brand); }
+  .search input:focus { border-color: var(--text); background: var(--card); }
   .suggest {
     position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10;
     background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.12); max-height: 320px; overflow: auto; display: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,.10); max-height: 320px; overflow: auto; display: none;
   }
   .suggest button {
     display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--text);
     padding: 12px 16px; font-size: 15px; cursor: pointer; border-bottom: 1px solid var(--line);
   }
   .suggest button:last-child { border-bottom: 0; }
-  .suggest button:hover, .suggest button:focus { background: var(--brand-soft); outline: none; }
+  .suggest button:hover, .suggest button:focus { background: var(--chip); outline: none; }
+  .suggest button.add-manual { font-weight: 700; }
   .suggest .hint { padding: 12px 16px; font-size: 13px; color: var(--sub); }
 
-  .section-title { font-size: 13px; color: var(--sub); font-weight: 600; margin: 18px 4px 8px; }
+  /* 묶음(섹션): 묶음마다 옅은 배경색 + 색 있는 제목, 안쪽 카드는 무채색 */
+  .grp { border-radius: 18px; padding: 12px 10px 4px; margin-top: 14px; background: var(--gbg); }
+  .grp-title {
+    display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 800;
+    color: var(--gc); margin: 2px 6px 10px;
+  }
+  .grp-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gc); }
+  .grp-title .cnt { font-weight: 600; opacity: .8; }
+  .g-live   { --gc: var(--live);   --gbg: var(--live-bg); }
+  .g-soon   { --gc: var(--soon);   --gbg: var(--soon-bg); }
+  .g-guess  { --gc: var(--guess);  --gbg: var(--guess-bg); }
+  .rest { margin-top: 18px; }
+  .rest summary {
+    list-style: none; cursor: pointer; font-size: 13px; color: var(--sub); padding: 6px 4px; font-weight: 600;
+  }
+  .rest summary::-webkit-details-marker { display: none; }
+  .rest summary::after { content: ' ▾'; }
+  .rest[open] summary::after { content: ' ▴'; }
+  .rest .card { border: 1px solid var(--line); box-shadow: none; }
+
   .card {
-    background: var(--card); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
-    border: 1px solid var(--line);
+    background: var(--card); border-radius: 14px; padding: 13px 14px; margin-bottom: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
   }
   .card-top { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
   .card-main { flex: 1; min-width: 0; }
-  .name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-  .badge {
-    display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; margin-right: 6px;
-  }
-  .b-live { background: var(--live-soft); color: var(--live); }
-  .b-soon { background: var(--soon-soft); color: var(--soon); }
-  .b-guess { background: var(--guess-soft); color: var(--guess); }
-  .b-none { background: var(--line); color: var(--sub); }
+  .row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .name { font-size: 16px; font-weight: 700; min-width: 0; }
+  .when { font-size: 15px; font-weight: 800; flex-shrink: 0; }
+  .badge { font-size: 12px; color: var(--sub); margin-top: 3px; }
   .detail { font-size: 13px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
-  .detail a { color: var(--brand); text-decoration: none; font-weight: 600; }
+  .detail a, .more { color: var(--text); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
   .remove {
-    border: 0; background: none; color: var(--sub); font-size: 18px; cursor: pointer; padding: 0 2px;
+    border: 0; background: none; color: var(--sub); font-size: 18px; cursor: pointer; padding: 0 2px; line-height: 1;
   }
   .history { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 10px; display: none; }
   .card.open .history { display: block; }
@@ -88,17 +106,17 @@
   .empty { text-align: center; color: var(--sub); padding: 48px 12px; line-height: 1.7; font-size: 14px; }
   .err { color: var(--live); }
   .share {
-    display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sub);
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px;
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sub);
+    padding: 2px 4px 4px;
   }
   .share .txt { flex: 1; min-width: 0; line-height: 1.4; }
-  .share .txt b { color: var(--text); }
-  .share .txt code { font-size: 12px; }
+  .share .txt b { color: var(--text); font-weight: 600; }
+  .share .txt a { color: var(--sub); }
   .share button {
-    border: 0; border-radius: 10px; padding: 8px 10px; font-size: 13px; font-weight: 700; cursor: pointer;
-    background: var(--brand-soft); color: var(--brand); flex-shrink: 0;
+    border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+    background: var(--card); color: var(--text); flex-shrink: 0;
   }
-  .share.warn { border-color: var(--guess); }
+  .share.warn .txt b { color: var(--guess); }
   footer { text-align: center; font-size: 11px; color: var(--sub); margin-top: 24px; line-height: 1.6; }
   footer a { color: var(--sub); }
 </style>
@@ -106,7 +124,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>내 공구 알리미<small>자주 사는 물건, 가장 빠른 공구 일정</small></h1>
+    <h1>또미제리 살림 공구 알리미</h1>
     <button class="icon-btn" id="refresh" title="새로고침">↻</button>
   </header>
 
@@ -134,6 +152,7 @@ let catalog = [];
 let results = {};
 let shared = null;                      // true: 공유 중 / false: 이 기기에만 저장 / null: 확인 중
 const openSet = new Set();
+let restOpen = false;
 
 const store = {
   get(k, fb) { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch { return fb; } },
@@ -197,12 +216,12 @@ function renderShare() {
     return;
   }
   el.className = 'share';
-  el.innerHTML = `<div class="txt">👨‍👩‍👧 <b>가족과 같이 보는 중</b><br/>코드 <code>${esc(family)}</code> · <a href="#" id="changeCode" style="color:inherit">코드 바꾸기</a></div>
+  el.innerHTML = `<div class="txt">👨‍👩‍👧 <b>가족과 같이 보는 중</b> · 코드 ${esc(family)} · <a href="#" id="changeCode">바꾸기</a></div>
     <button id="shareBtn">가족에게 보내기</button>`;
   document.getElementById('shareBtn').onclick = async () => {
     const url = shareUrl();
     try {
-      if (navigator.share) { await navigator.share({ title: '내 공구 알리미', text: '같이 보는 공구 목록', url }); return; }
+      if (navigator.share) { await navigator.share({ title: '또미제리 살림 공구 알리미', text: '같이 보는 공구 목록', url }); return; }
     } catch (e) { if (e.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(url); alert('링크를 복사했어요. 카톡으로 보내주세요!\n\n' + url); }
     catch { prompt('이 링크를 복사해서 보내주세요', url); }
@@ -219,187 +238,14 @@ function renderShare() {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const md = (s) => { const [, m, d] = s.split('-'); return `${+m}/${+d}`; };
 const dday = (from, to) => Math.round((new Date(to) - new Date(from)) / 86400000);
+// 오늘 날짜는 항상 '내 폰'에서 한국시간으로 계산 (서버 캐시 때문에 하루 밀리는 것 방지)
+const todayKST = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+const addDays = (s, n) => new Date(new Date(s + 'T00:00:00Z').getTime() + n * 86400000).toISOString().slice(0, 10);
+const isManual = (path) => path.startsWith('manual:');
 
-// ---------- 검색 / 추가 ----------
-async function loadCatalog() {
-  try {
-    const r = await fetch('/api/products');
-    const j = await r.json();
-    catalog = j.products || [];
-  } catch { catalog = []; }
-}
-
-const q = document.getElementById('q');
-const sug = document.getElementById('suggest');
-
-q.addEventListener('input', () => {
-  const v = q.value.trim().replace(/\s+/g, ' ');
-  if (!v) { sug.style.display = 'none'; return; }
-  const words = v.split(' ');
-  const mine = new Set(myItems().map((x) => x.path));
-  const hits = catalog.filter((p) => words.every((w) => p.name.includes(w)) && !mine.has(p.path)).slice(0, 30);
-  sug.innerHTML = hits.length
-    ? hits.map((p) => `<button data-path="${esc(p.path)}" data-name="${esc(p.name)}">${esc(p.name)}</button>`).join('')
-    : `<div class="hint">${catalog.length ? '목록에 없어요. 맘캘린더에서 2번 이상 공구한 제품만 검색돼요.' : '제품 목록을 불러오는 중이에요…'}</div>`;
-  sug.style.display = 'block';
-});
-sug.addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-path]');
-  if (!b) return;
-  addItem({ name: b.dataset.name, path: b.dataset.path });
-});
-document.addEventListener('click', (e) => { if (!e.target.closest('.search')) sug.style.display = 'none'; });
-
-async function addItem(item) {
-  if (!items.some((x) => x.path === item.path)) items.unshift(item);
-  saveLocal();
-  q.value = ''; sug.style.display = 'none';
-  render();
-  fetchOne(item.path).then(render);
-  if (shared) {
-    try { items = await listApi('POST', { action: 'add', item }); saveLocal(); render(); }
-    catch { alert('공유 저장에 실패했어요. 잠시 뒤 다시 해주세요.'); }
-  }
-}
-async function removeItem(path) {
-  items = items.filter((x) => x.path !== path);
-  saveLocal();
-  delete results[path];
-  render();
-  if (shared) {
-    try { items = await listApi('POST', { action: 'remove', path }); saveLocal(); render(); }
-    catch { alert('공유 저장에 실패했어요. 잠시 뒤 다시 해주세요.'); }
-  }
-}
-
-// ---------- 일정 가져오기 ----------
-async function fetchOne(path) {
-  try {
-    const r = await fetch('/api/product?path=' + encodeURIComponent(path));
-    const j = await r.json();
-    results[path] = r.ok ? j : { error: j.error || '불러오기 실패' };
-  } catch (e) {
-    results[path] = { error: '네트워크 오류' };
-  }
-  store.set(CACHE_KEY, results);
-}
-async function refreshAll() {
-  const btn = document.getElementById('refresh');
-  btn.classList.add('spin');
-  const list = myItems();
-  // 동시에 3개씩만 요청 (맘캘린더 부담 줄이기)
-  for (let i = 0; i < list.length; i += 3) {
-    await Promise.all(list.slice(i, i + 3).map((x) => fetchOne(x.path)));
-    render();
-  }
-  btn.classList.remove('spin');
-}
-
-// ---------- 화면 ----------
-function statusOf(item) {
-  const r = results[item.path];
-  if (!r) return { rank: 9, sortKey: '9', html: `<span class="badge b-none">불러오는 중</span>` };
-  if (r.error) return { rank: 8, sortKey: '8', html: `<span class="badge b-none err">${esc(r.error)}</span>` };
-  const t = r.today;
-  if (r.ongoing.length) {
-    const g = r.ongoing[0], d = dday(t, g.end);
-    return { rank: 0, sortKey: g.end, g,
-      html: `<span class="badge b-live">진행중 · ${d === 0 ? '오늘 마감' : `D-${d} 마감`}</span>${r.ongoing.length > 1 ? `<span class="badge b-live">${r.ongoing.length}곳</span>` : ''}` };
-  }
-  if (r.upcoming.length) {
-    const g = r.upcoming[0], d = dday(t, g.start);
-    return { rank: 1, sortKey: g.start, g,
-      html: `<span class="badge b-soon">오픈 예정 · ${d === 1 ? '내일' : `D-${d}`}</span>` };
-  }
-  if (r.prediction) {
-    return { rank: 2, sortKey: r.prediction.date,
-      html: `<span class="badge b-guess">예상 ${md(r.prediction.date)}쯤</span>` };
-  }
-  return { rank: 3, sortKey: 'z', html: `<span class="badge b-none">일정 없음</span>` };
-}
-
-function detailOf(item, st) {
-  const r = results[item.path];
-  if (!r || r.error) return '';
-  const link = (g) => g.link ? ` · <a href="${esc(g.link)}" target="_blank" rel="noopener">${esc(g.seller || '셀러')} 인스타 →</a>` : (g.seller ? ` · ${esc(g.seller)}` : '');
-  if (st.g) return `<div class="detail">${esc(st.g.title)}<br/>${md(st.g.start)} ~ ${md(st.g.end)}${link(st.g)}</div>`;
-  if (r.prediction) {
-    const last = r.past[0];
-    return `<div class="detail">보통 ${r.prediction.gapDays}일 간격으로 열렸어요 (공구 ${r.prediction.basedOn}번 기준)${last ? `<br/>최근: ${md(last.start)} ~ ${md(last.end)}` : ''}</div>`;
-  }
-  return '';
-}
-
-function historyOf(item) {
-  const r = results[item.path];
-  if (!r || r.error) return '';
-  const rows = [...r.ongoing, ...r.upcoming, ...r.past]
-    .map((g) => `<div class="hrow"><span>${esc(g.title)}${g.seller ? ` · ${esc(g.seller)}` : ''}</span><span>${md(g.start)}~${md(g.end)}</span></div>`)
-    .join('');
-  return `<div class="history">${rows || '<div class="hrow"><span>기록 없음</span></div>'}
-    <a class="more" href="https://momcalendar.com${encodeURI(decodeURI(item.path))}" target="_blank" rel="noopener">맘캘린더에서 전체 보기 →</a></div>`;
-}
-
-function render() {
-  const list = myItems();
-  const el = document.getElementById('list');
-  if (!list.length) {
-    el.innerHTML = `<div class="empty">🛒<br/>위에서 자주 사는 물건을 검색해서 추가해 보세요.<br/>진행 중이거나 가장 빨리 열리는 공구부터 보여드려요.</div>`;
-    return;
-  }
-  const rows = list.map((it) => ({ it, st: statusOf(it) }))
-    .sort((a, b) => a.st.rank - b.st.rank || a.st.sortKey.localeCompare(b.st.sortKey));
-
-  const groups = [
-    ['지금 살 수 있어요', (s) => s.rank === 0],
-    ['곧 열려요', (s) => s.rank === 1],
-    ['다음 공구 예상', (s) => s.rank === 2],
-    ['그 외', (s) => s.rank >= 3],
-  ];
-  el.innerHTML = groups.map(([title, fn]) => {
-    const g = rows.filter((x) => fn(x.st));
-    if (!g.length) return '';
-    return `<div class="section-title">${title}</div>` + g.map(({ it, st }) => `
-      <div class="card ${openSet.has(it.path) ? 'open' : ''}" data-path="${esc(it.path)}">
-        <div class="card-top">
-          <div class="card-main">
-            <div class="name">${esc(results[it.path]?.name || it.name)}</div>
-            ${st.html}
-            ${detailOf(it, st)}
-          </div>
-          <button class="remove" data-remove="${esc(it.path)}" title="삭제">×</button>
-        </div>
-        ${historyOf(it)}
-      </div>`).join('');
-  }).join('');
-}
-
-document.getElementById('list').addEventListener('click', (e) => {
-  if (e.target.closest('a')) return;
-  const rm = e.target.closest('[data-remove]');
-  if (rm) { if (confirm('목록에서 뺄까요?')) removeItem(rm.dataset.remove); return; }
-  const card = e.target.closest('.card');
-  if (!card) return;
-  const p = card.dataset.path;
-  openSet.has(p) ? openSet.delete(p) : openSet.add(p);
-  card.classList.toggle('open');
-});
-document.getElementById('refresh').addEventListener('click', async () => { await syncList(); refreshAll(); });
-
-// 앱을 다시 열 때(백그라운드 → 화면) 가족이 바꾼 목록 반영
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') syncList().then(() => {
-    const missing = items.filter((x) => !results[x.path]);
-    missing.forEach((x) => fetchOne(x.path).then(render));
-  });
-});
-
-// ---------- 시작 ----------
-results = store.get(CACHE_KEY, {});
-renderShare();
-render();
-loadCatalog();
-syncList().then(refreshAll);
-</script>
-</body>
-</html>
+// 서버가 준 일정을 '오늘' 기준으로 다시 나눔
+function view(r) {
+  const t = todayKST();
+  const all = [...(r.ongoing || []), ...(r.upcoming || []), ...(r.past || [])];
+  const ongoing = all.filter((x) => x.start <= t && t <= x.end).sort((a, b) => a.end.localeCompare(b.end));
+  const
