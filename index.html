@@ -117,6 +117,33 @@
     background: var(--card); color: var(--text); flex-shrink: 0;
   }
   .share.warn .txt b { color: var(--guess); }
+  /* 자주 가는 곳 (맨 위, 접었다 폈다) */
+  .links { background: var(--chip); border-radius: 14px; margin-bottom: 12px; }
+  .links summary {
+    list-style: none; cursor: pointer; padding: 12px 14px; font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .links summary::-webkit-details-marker { display: none; }
+  .links summary::after { content: '▾'; color: var(--sub); font-size: 12px; }
+  .links[open] summary::after { content: '▴'; }
+  .links summary .cnt { color: var(--sub); font-weight: 600; margin-left: 4px; }
+  .links-body { padding: 0 14px 12px; }
+  .link-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .link-row a { flex: 1; min-width: 0; color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .link-row a::after { content: ' →'; color: var(--sub); }
+  .link-form { display: flex; gap: 6px; margin-top: 8px; }
+  .link-form input {
+    min-width: 0; font-size: 14px; padding: 9px 10px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--card); color: var(--text); outline: none;
+  }
+  .link-form input[name=name] { flex: 0 0 38%; }
+  .link-form input[name=url] { flex: 1; }
+  .link-form button {
+    border: 0; border-radius: 10px; padding: 0 12px; font-size: 14px; font-weight: 700;
+    background: var(--text); color: var(--bg); cursor: pointer; flex-shrink: 0;
+  }
+  .links .none { font-size: 13px; color: var(--sub); padding: 4px 0 2px; }
   footer { text-align: center; font-size: 11px; color: var(--sub); margin-top: 24px; line-height: 1.6; }
   footer a { color: var(--sub); }
 </style>
@@ -127,6 +154,18 @@
     <h1>또미제리 살림 공구 알리미</h1>
     <button class="icon-btn" id="refresh" title="새로고침">↻</button>
   </header>
+
+  <details class="links" id="links">
+    <summary><span>🔖 자주 가는 곳<span class="cnt" id="linkCnt"></span></span></summary>
+    <div class="links-body">
+      <div id="linkList"></div>
+      <form class="link-form" id="linkForm">
+        <input name="name" placeholder="이름 (예: 차앤맘)" autocomplete="off" />
+        <input name="url" type="url" inputmode="url" placeholder="링크 붙여넣기" autocomplete="off" required />
+        <button type="submit">추가</button>
+      </form>
+    </div>
+  </details>
 
   <div class="search">
     <input id="q" type="search" placeholder="자주 사는 물건 검색 (예: 주니 빨대컵)" autocomplete="off" />
