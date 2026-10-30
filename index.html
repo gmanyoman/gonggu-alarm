@@ -87,6 +87,18 @@
   .more { display: inline-block; margin-top: 8px; font-size: 13px; }
   .empty { text-align: center; color: var(--sub); padding: 48px 12px; line-height: 1.7; font-size: 14px; }
   .err { color: var(--live); }
+  .share {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sub);
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px;
+  }
+  .share .txt { flex: 1; min-width: 0; line-height: 1.4; }
+  .share .txt b { color: var(--text); }
+  .share .txt code { font-size: 12px; }
+  .share button {
+    border: 0; border-radius: 10px; padding: 8px 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+    background: var(--brand-soft); color: var(--brand); flex-shrink: 0;
+  }
+  .share.warn { border-color: var(--guess); }
   footer { text-align: center; font-size: 11px; color: var(--sub); margin-top: 24px; line-height: 1.6; }
   footer a { color: var(--sub); }
 </style>
@@ -103,6 +115,8 @@
     <div class="suggest" id="suggest"></div>
   </div>
 
+  <div class="share" id="share"></div>
+
   <div id="list"></div>
 
   <footer>
@@ -112,17 +126,96 @@
 </div>
 
 <script>
-const KEY = 'gonggu-alarm:items';
+const KEY = 'gonggu-alarm:items';       // 공유 목록의 사본 (빨리 보여주기용)
 const CACHE_KEY = 'gonggu-alarm:cache';
+const FAMILY_KEY = 'gonggu-alarm:family';
+const CODE_RE = /^[a-z0-9-]{6,40}$/;
 let catalog = [];
 let results = {};
+let shared = null;                      // true: 공유 중 / false: 이 기기에만 저장 / null: 확인 중
 const openSet = new Set();
 
 const store = {
   get(k, fb) { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch { return fb; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
-const myItems = () => store.get(KEY, []);
+let items = store.get(KEY, []);
+const myItems = () => items;
+const saveLocal = () => store.set(KEY, items);
+
+// ---------- 가족 코드 ----------
+// 주소 뒤 ?family=코드 가 같으면 같은 목록을 봄. 홈 화면에 추가할 때 주소째 저장돼서 코드가 유지됨.
+function initFamily() {
+  const u = new URL(location.href);
+  let code = (u.searchParams.get('family') || '').toLowerCase();
+  if (!CODE_RE.test(code)) code = store.get(FAMILY_KEY, '');
+  if (!CODE_RE.test(code)) code = 'fam-' + Math.random().toString(36).slice(2, 10);
+  store.set(FAMILY_KEY, code);
+  if (u.searchParams.get('family') !== code) {
+    u.searchParams.set('family', code);
+    history.replaceState(null, '', u);
+  }
+  return code;
+}
+let family = initFamily();
+
+async function listApi(method, body) {
+  const r = await fetch('/api/list?code=' + encodeURIComponent(family), {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || '저장 실패');
+  return j.items;
+}
+
+async function syncList() {
+  try {
+    let srv = await listApi('GET');
+    // 처음 공유 켜질 때: 이 기기에만 있던 목록을 공유 저장소로 옮김
+    if (!srv.length && items.length) srv = await listApi('POST', { action: 'replace', items });
+    items = srv;
+    shared = true;
+    saveLocal();
+  } catch {
+    shared = false;
+  }
+  renderShare();
+  render();
+}
+
+function shareUrl() {
+  return location.origin + location.pathname + '?family=' + family;
+}
+
+function renderShare() {
+  const el = document.getElementById('share');
+  if (shared === false) {
+    el.className = 'share warn';
+    el.innerHTML = `<div class="txt">⚠️ <b>공유 저장소가 아직 연결 안 됐어요.</b><br/>지금은 이 기기에만 저장돼요.</div>`;
+    return;
+  }
+  el.className = 'share';
+  el.innerHTML = `<div class="txt">👨‍👩‍👧 <b>가족과 같이 보는 중</b><br/>코드 <code>${esc(family)}</code> · <a href="#" id="changeCode" style="color:inherit">코드 바꾸기</a></div>
+    <button id="shareBtn">가족에게 보내기</button>`;
+  document.getElementById('shareBtn').onclick = async () => {
+    const url = shareUrl();
+    try {
+      if (navigator.share) { await navigator.share({ title: '내 공구 알리미', text: '같이 보는 공구 목록', url }); return; }
+    } catch (e) { if (e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(url); alert('링크를 복사했어요. 카톡으로 보내주세요!\n\n' + url); }
+    catch { prompt('이 링크를 복사해서 보내주세요', url); }
+  };
+  document.getElementById('changeCode').onclick = (e) => {
+    e.preventDefault();
+    const v = (prompt('가족한테 받은 코드를 입력하세요 (예: fam-ab12cd34)', '') || '').trim().toLowerCase();
+    if (!v) return;
+    if (!CODE_RE.test(v)) { alert('코드는 영어 소문자·숫자·- 로 6자 이상이에요'); return; }
+    store.set(FAMILY_KEY, v);
+    location.href = location.pathname + '?family=' + v;
+  };
+}
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const md = (s) => { const [, m, d] = s.split('-'); return `${+m}/${+d}`; };
 const dday = (from, to) => Math.round((new Date(to) - new Date(from)) / 86400000);
@@ -157,18 +250,26 @@ sug.addEventListener('click', (e) => {
 });
 document.addEventListener('click', (e) => { if (!e.target.closest('.search')) sug.style.display = 'none'; });
 
-function addItem(item) {
-  const list = myItems();
-  if (!list.some((x) => x.path === item.path)) list.unshift(item);
-  store.set(KEY, list);
+async function addItem(item) {
+  if (!items.some((x) => x.path === item.path)) items.unshift(item);
+  saveLocal();
   q.value = ''; sug.style.display = 'none';
   render();
   fetchOne(item.path).then(render);
+  if (shared) {
+    try { items = await listApi('POST', { action: 'add', item }); saveLocal(); render(); }
+    catch { alert('공유 저장에 실패했어요. 잠시 뒤 다시 해주세요.'); }
+  }
 }
-function removeItem(path) {
-  store.set(KEY, myItems().filter((x) => x.path !== path));
+async function removeItem(path) {
+  items = items.filter((x) => x.path !== path);
+  saveLocal();
   delete results[path];
   render();
+  if (shared) {
+    try { items = await listApi('POST', { action: 'remove', path }); saveLocal(); render(); }
+    catch { alert('공유 저장에 실패했어요. 잠시 뒤 다시 해주세요.'); }
+  }
 }
 
 // ---------- 일정 가져오기 ----------
@@ -283,13 +384,22 @@ document.getElementById('list').addEventListener('click', (e) => {
   openSet.has(p) ? openSet.delete(p) : openSet.add(p);
   card.classList.toggle('open');
 });
-document.getElementById('refresh').addEventListener('click', refreshAll);
+document.getElementById('refresh').addEventListener('click', async () => { await syncList(); refreshAll(); });
+
+// 앱을 다시 열 때(백그라운드 → 화면) 가족이 바꾼 목록 반영
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') syncList().then(() => {
+    const missing = items.filter((x) => !results[x.path]);
+    missing.forEach((x) => fetchOne(x.path).then(render));
+  });
+});
 
 // ---------- 시작 ----------
 results = store.get(CACHE_KEY, {});
+renderShare();
 render();
 loadCatalog();
-refreshAll();
+syncList().then(refreshAll);
 </script>
 </body>
 </html>
