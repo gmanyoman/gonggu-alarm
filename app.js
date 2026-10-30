@@ -155,6 +155,54 @@ async function removeItem(path) {
   }
 }
 
+// ---------- 자주 가는 곳 (가족 공유 링크 메모) ----------
+const LINKS_KEY = 'gonggu-alarm:links';
+const LINKS_OPEN_KEY = 'gonggu-alarm:links-open';
+let links = store.get(LINKS_KEY, []);
+
+async function linksApi(method, body) {
+  const r = await fetch('/api/links?code=' + encodeURIComponent(family), {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || '저장 실패');
+  return j.links;
+}
+async function syncLinks() {
+  try { links = await linksApi('GET'); store.set(LINKS_KEY, links); } catch {}
+  renderLinks();
+}
+function renderLinks() {
+  document.getElementById('linkCnt').textContent = links.length ? links.length : '';
+  document.getElementById('linkList').innerHTML = links.length
+    ? links.map((l) => `<div class="link-row"><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>
+        <button class="remove" data-link="${esc(l.id)}" title="삭제">×</button></div>`).join('')
+    : `<div class="none">자주 사는 곳 링크를 붙여넣어 두세요. 가족도 같이 봐요.</div>`;
+}
+const linksEl = document.getElementById('links');
+linksEl.open = store.get(LINKS_OPEN_KEY, false);
+linksEl.addEventListener('toggle', () => store.set(LINKS_OPEN_KEY, linksEl.open));
+document.getElementById('linkForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  let url = f.url.value.trim();
+  if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try {
+    links = await linksApi('POST', { action: 'add', name: f.name.value, url });
+    store.set(LINKS_KEY, links);
+    f.reset();
+    renderLinks();
+  } catch (err) { alert(err.message); }
+});
+document.getElementById('linkList').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-link]');
+  if (!b || !confirm('이 링크를 지울까요?')) return;
+  try { links = await linksApi('POST', { action: 'remove', id: b.dataset.link }); store.set(LINKS_KEY, links); renderLinks(); }
+  catch (err) { alert(err.message); }
+});
+
 // ---------- 일정 가져오기 ----------
 async function fetchOne(path) {
   if (isManual(path)) return;
@@ -275,10 +323,11 @@ document.getElementById('list').addEventListener('click', (e) => {
   openSet.has(p) ? openSet.delete(p) : openSet.add(p);
   card.classList.toggle('open');
 });
-document.getElementById('refresh').addEventListener('click', async () => { await syncList(); refreshAll(); });
+document.getElementById('refresh').addEventListener('click', async () => { syncLinks(); await syncList(); refreshAll(); });
 
 // 앱을 다시 열 때(백그라운드 → 화면) 가족이 바꾼 목록 반영
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') syncLinks();
   if (document.visibilityState === 'visible') syncList().then(() => {
     const missing = items.filter((x) => !isManual(x.path) && !results[x.path]);
     missing.forEach((x) => fetchOne(x.path).then(render));
@@ -288,6 +337,8 @@ document.addEventListener('visibilitychange', () => {
 // ---------- 시작 ----------
 results = store.get(CACHE_KEY, {});
 renderShare();
+renderLinks();
 render();
 loadCatalog();
+syncLinks();
 syncList().then(refreshAll);
